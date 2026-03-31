@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STAGE ALERT BOARD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --border: #1e2530;
+    --text: #c8d4e0;
+    --muted: #4a5568;
+    --green: #00e676;
+    --amber: #ffb300;
+    --red: #ff1744;
+    --blue: #40c4ff;
+    --white: #ffffff;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Oswald', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── LOGIN SCREEN ─────────────────────────────────────────────────────────── */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #login-screen.hidden { display: none; }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+    padding: 36px 32px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .login-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white);
+    text-align: center;
+  }
+
+  .login-sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .login-box input[type="password"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    padding: 10px 12px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 0.2em;
+    transition: border-color 0.2s;
+  }
+  .login-box input[type="password"]:focus { border-color: var(--blue); }
+  .login-box input[type="password"].error { border-color: var(--red); }
+
+  .login-btn {
+    background: var(--blue);
+    color: #000;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .login-btn:hover { background: #80d8ff; }
+
+  .login-error {
+    font-size: 0.65rem;
+    color: var(--red);
+    text-align: center;
+    letter-spacing: 0.08em;
+    min-height: 1em;
+  }
+
+  /* ── SYNC STATUS ──────────────────────────────────────────────────────────── */
+  #sync-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 4px 20px;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync-dot.ok    { background: var(--green); }
+  .sync-dot.error { background: var(--red); }
+  .sync-dot.busy  { background: var(--amber); }
+
+  /* ── HEADER ───────────────────────────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 16px; }
+
+  .site-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .clock { font-size: 0.85rem; color: var(--blue); letter-spacing: 0.1em; }
+
+  .add-btn {
+    background: var(--blue);
+    color: #000;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    padding: 7px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .add-btn:hover { background: #80d8ff; }
+
+  /* ── PUCK LIST ────────────────────────────────────────────────────────────── */
+  #puck-list {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .empty-state {
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+    margin-top: 40px;
+    text-transform: uppercase;
+  }
+
+  /* ── PUCK ─────────────────────────────────────────────────────────────────── */
+  .puck {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--muted);
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 6px 12px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .puck.state-nominal { border-left-color: var(--muted); }
+  .puck.state-warning { border-left-color: var(--amber); background: #1a1500; }
+  .puck.state-alert   { border-left-color: var(--red);   background: #1a0005; }
+  .puck.state-alerted { border-left-color: var(--muted); opacity: 0.5; }
+
+  @keyframes pulse-border {
+    0%, 100% { border-left-color: var(--red); }
+    50%       { border-left-color: #ff8a80; }
+  }
+  .puck.state-alert.unacked { animation: pulse-border 1s ease-in-out infinite; }
+
+  .puck-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .callsign {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .time-raw { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; }
+
+  .countdown {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    min-width: 110px;
+    text-align: right;
+  }
+  .countdown.warn { color: var(--amber); }
+  .countdown.fire { color: var(--red); }
+  .countdown.past { color: var(--muted); font-size: 1rem; }
+
+  .puck-bottom { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  .check-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    user-select: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .check-pill input { display: none; }
+  .check-pill.checked   { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.07); }
+  .check-pill.unchecked { border-color: var(--muted); color: var(--muted); }
+
+  @keyframes pill-pulse {
+    0%, 100% { border-color: var(--amber); color: var(--amber); background: rgba(255,179,0,0.1); }
+    50%       { border-color: var(--red);   color: var(--red);   background: rgba(255,23,68,0.1); }
+  }
+  .check-pill.needs-attention { animation: pill-pulse 0.8s ease-in-out infinite; }
+
+  .pa-arm-btn {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px dashed var(--muted);
+    color: var(--muted);
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .pa-arm-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+  .puck-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+  .ack-btn, .alerted-btn, .delete-btn {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid;
+    padding: 3px 8px;
+    cursor: pointer;
+    background: none;
+    transition: background 0.15s;
+  }
+  .ack-btn        { border-color: var(--amber); color: var(--amber); }
+  .ack-btn:hover  { background: rgba(255,179,0,0.15); }
+  .ack-btn.hidden { display: none; }
+  .alerted-btn       { border-color: var(--green); color: var(--green); }
+  .alerted-btn:hover { background: rgba(0,230,118,0.1); }
+  .delete-btn        { border-color: var(--muted); color: var(--muted); font-size: 0.6rem; padding: 2px 6px; }
+  .delete-btn:hover  { border-color: var(--red); color: var(--red); }
+
+  /* ── MODAL ────────────────────────────────────────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+    padding: 24px;
+    width: 360px;
+    max-width: 95vw;
+  }
+
+  .modal h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 20px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 0.9rem; padding: 8px 10px; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: var(--blue); }
+  .field input.error { border-color: var(--red); }
+  .field .hint { font-size: 0.6rem; color: var(--muted); margin-top: 4px; letter-spacing: 0.05em; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+  .modal-btn { font-family: var(--font-display); font-weight: 600; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; border: none; padding: 8px 18px; cursor: pointer; }
+  .modal-btn.primary   { background: var(--blue); color: #000; }
+  .modal-btn.secondary { background: var(--border); color: var(--text); }
+  .modal-btn:hover { opacity: 0.85; }
+
+  .error-msg { font-size: 0.65rem; color: var(--red); margin-top: 8px; letter-spacing: 0.05em; min-height: 1em; }
+
+  #audio-ctx-note {
+    display: none;
+    font-size: 0.65rem;
+    color: var(--amber);
+    text-align: center;
+    padding: 6px;
+    background: rgba(255,179,0,0.08);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  #audio-ctx-note.visible { display: block; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">Stage Alert Board</div>
+    <div class="login-sub">Authentication Required</div>
+    <input type="password" id="pw-input" placeholder="············" autocomplete="current-password" />
+    <button class="login-btn" onclick="doLogin()">Authenticate</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ───────────────────────────────────────────────────────────── -->
+<div id="app" style="display:none; flex-direction:column; flex:1; min-height:100vh;">
+
+  <div id="audio-ctx-note" class="visible" onclick="unlockAudio()">
+    ⚠ CLICK HERE TO ENABLE AUDIO ALERTS
+  </div>
+
+  <div id="sync-bar">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Initializing...</span>
+  </div>
+
+  <header>
+    <div class="header-left">
+      <span class="site-title">Stage Alert Board</span>
+      <span class="clock" id="clock">----Z</span>
+    </div>
+    <button class="add-btn" onclick="openModal()">+ Add Alert</button>
+  </header>
+
+  <div id="puck-list">
+    <div class="empty-state" id="empty-msg">No active alerts</div>
+  </div>
+
+</div>
+
+<!-- ── MODAL ──────────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>New Alert</h2>
+    <div class="field">
+      <label>Callsign / Label</label>
+      <input type="text" id="f-callsign" placeholder="e.g. RCH1776" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Alert Time (Julian/Zulu)</label>
+      <input type="text" id="f-time" placeholder="e.g. 6089/2230Z" autocomplete="off" />
+      <div class="hint">6089/2230Z · 089/2230 · 89/2230 · 2230Z · 2230 — all valid</div>
+    </div>
+    <div class="error-msg" id="modal-error"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="submitAlert()">Add Alert</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// CONFIG — paste your JSONbin credentials here after setup
+// ═══════════════════════════════════════════════════════════════════
+const JSONBIN_BIN_ID  = '69cb3f13aaba882197acc5ba';
+const JSONBIN_API_KEY = '$2a$10$HEag8VGmfVw3s2zmHF9L1e7TXdihsMTlrmINoqgZcLaN0GPS3hq3C';
+const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+const POLL_MS = 15000;
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════════
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  const [inputHash, correctHash] = await Promise.all([sha256(pw), sha256('09kwri')]);
+  if (inputHash === correctHash) {
+    sessionStorage.setItem('stage_auth', '1');
+    document.getElementById('login-screen').classList.add('hidden');
+    const app = document.getElementById('app');
+    app.style.display = 'flex';
+    initApp();
+  } else {
+    const inp = document.getElementById('pw-input');
+    inp.classList.add('error');
+    document.getElementById('login-error').textContent = 'Access denied.';
+    setTimeout(() => { inp.classList.remove('error'); inp.value = ''; }, 1200);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('stage_auth') === '1') {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+  }
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let alerts = [];
+let lastEtag = null;
+let saveTimeout = null;
+
+// ═══════════════════════════════════════════════════════════════════
+// SYNC UI
+// ═══════════════════════════════════════════════════════════════════
+function setSyncStatus(state, msg) {
+  document.getElementById('sync-dot').className = `sync-dot ${state}`;
+  document.getElementById('sync-label').textContent = msg;
+}
+
+function syncTimestamp() {
+  const now = new Date();
+  return `${String(now.getUTCHours()).padStart(2,'0')}${String(now.getUTCMinutes()).padStart(2,'0')}:${String(now.getUTCSeconds()).padStart(2,'0')}Z`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// JSONBIN
+// ═══════════════════════════════════════════════════════════════════
+const notConfigured = () => JSONBIN_BIN_ID === 'REPLACE_WITH_YOUR_BIN_ID';
+
+async function loadFromBin() {
+  if (notConfigured()) {
+    try { alerts = JSON.parse(localStorage.getItem('stage_alerts_v2') || '[]'); } catch(e) { alerts = []; }
+    setSyncStatus('error', 'JSONbin not configured — local storage only');
+    return;
+  }
+  try {
+    setSyncStatus('busy', 'Syncing...');
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    lastEtag = res.headers.get('ETag') || null;
+    const data = await res.json();
+    alerts = data.record?.alerts || [];
+    setSyncStatus('ok', `Synced ${syncTimestamp()}`);
+  } catch(e) {
+    setSyncStatus('error', `Sync failed: ${e.message}`);
+    try { alerts = JSON.parse(localStorage.getItem('stage_alerts_v2') || '[]'); } catch(e2) { alerts = []; }
+  }
+}
+
+async function saveToBin() {
+  localStorage.setItem('stage_alerts_v2', JSON.stringify(alerts));
+  if (notConfigured()) return;
+  try {
+    setSyncStatus('busy', 'Saving...');
+    const res = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+      body: JSON.stringify({ alerts })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setSyncStatus('ok', `Saved ${syncTimestamp()}`);
+  } catch(e) {
+    setSyncStatus('error', `Save failed: ${e.message} (local backup OK)`);
+  }
+}
+
+function saveAlerts() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveToBin, 800);
+}
+
+async function pollBin() {
+  if (notConfigured()) return;
+  try {
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if (!res.ok) return;
+    const newEtag = res.headers.get('ETag') || null;
+    if (newEtag && newEtag !== lastEtag) {
+      lastEtag = newEtag;
+      const data = await res.json();
+      alerts = data.record?.alerts || [];
+      setSyncStatus('ok', `Updated ${syncTimestamp()}`);
+    }
+  } catch(e) {
+    setSyncStatus('error', `Poll failed: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// JULIAN DATE PARSER
+// ═══════════════════════════════════════════════════════════════════
+function parseJulianZulu(str) {
+  const s = str.trim().toUpperCase().replace(/Z$/, '');
+  const now = new Date();
+
+  let m = s.match(/^(\d)(\d{3})\/(\d{2})(\d{2})$/);
+  if (m) {
+    const jday = parseInt(m[2]), hh = parseInt(m[3]), mm = parseInt(m[4]);
+    if (hh > 23 || mm > 59 || jday < 1 || jday > 366) return null;
+    let year = Math.floor(now.getUTCFullYear() / 10) * 10 + parseInt(m[1]);
+    const d = new Date(Date.UTC(year, 0, jday, hh, mm, 0, 0));
+    return d < now - 3*86400000 ? new Date(Date.UTC(year+10, 0, jday, hh, mm)).getTime() : d.getTime();
+  }
+
+  m = s.match(/^(\d{2,3})\/(\d{2})(\d{2})$/);
+  if (m) {
+    const jday = parseInt(m[1]), hh = parseInt(m[2]), mm = parseInt(m[3]);
+    if (hh > 23 || mm > 59 || jday < 1 || jday > 366) return null;
+    let d = new Date(Date.UTC(now.getUTCFullYear(), 0, jday, hh, mm, 0, 0));
+    if (d < now - 3*86400000) d = new Date(Date.UTC(now.getUTCFullYear()+1, 0, jday, hh, mm));
+    return d.getTime();
+  }
+
+  m = s.match(/^(\d{2})(\d{2})$/);
+  if (m) {
+    const hh = parseInt(m[1]), mm = parseInt(m[2]);
+    if (hh > 23 || mm > 59) return null;
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hh, mm, 0, 0));
+    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
+    return d.getTime();
+  }
+
+  return null;
+}
+
+function toJulianZulu(ms) {
+  const d = new Date(ms);
+  const year = d.getUTCFullYear();
+  const jday = Math.floor((d - new Date(Date.UTC(year, 0, 0))) / 86400000);
+  return `${year % 10}${String(jday).padStart(3,'0')}/${String(d.getUTCHours()).padStart(2,'0')}${String(d.getUTCMinutes()).padStart(2,'0')}Z`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════════════════
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  document.getElementById('audio-ctx-note').classList.remove('visible');
+}
+
+function beep(type) {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const cfg = type === 'alert'
+    ? { freq: 1320, dur: 0.18, gap: 0.08, count: 3, gain: 0.4 }
+    : { freq: 880,  dur: 0.12, gap: 0.06, count: 2, gain: 0.25 };
+  let t = audioCtx.currentTime;
+  for (let i = 0; i < cfg.count; i++) {
+    const osc = audioCtx.createOscillator();
+    const gn  = audioCtx.createGain();
+    osc.connect(gn); gn.connect(audioCtx.destination);
+    osc.frequency.value = cfg.freq; osc.type = 'sine';
+    gn.gain.setValueAtTime(0, t);
+    gn.gain.linearRampToValueAtTime(cfg.gain, t + 0.01);
+    gn.gain.linearRampToValueAtTime(0, t + cfg.dur);
+    osc.start(t); osc.stop(t + cfg.dur);
+    t += cfg.dur + cfg.gap;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const jday = Math.floor((now - new Date(Date.UTC(year, 0, 0))) / 86400000);
+  const hh = String(now.getUTCHours()).padStart(2,'0');
+  const mm = String(now.getUTCMinutes()).padStart(2,'0');
+  const ss = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${year % 10}${String(jday).padStart(3,'0')}/${hh}${mm}:${ss}Z`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// COUNTDOWN
+// ═══════════════════════════════════════════════════════════════════
+function formatCountdown(ms) {
+  if (ms <= 0) return { text: 'NOW', cls: 'fire' };
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const text = h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return { text, cls: ms <= 30*60*1000 ? 'warn' : '' };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════
+const firedWarning = new Set();
+const firedAlert   = new Set();
+
+function render() {
+  const now = Date.now();
+  const sorted = [...alerts].sort((a, b) => a.alerted !== b.alerted ? (a.alerted ? 1 : -1) : a.targetMs - b.targetMs);
+  const list  = document.getElementById('puck-list');
+  const empty = document.getElementById('empty-msg');
+
+  const ids = new Set(alerts.map(a => a.id));
+  list.querySelectorAll('.puck').forEach(el => { if (!ids.has(el.dataset.id)) el.remove(); });
+  empty.style.display = sorted.length === 0 ? 'block' : 'none';
+
+  sorted.forEach(alert => {
+    const ms = alert.targetMs - now;
+    const isWarning = ms <= 30*60*1000 && ms > 0;
+    const isAlert   = ms <= 0;
+
+    if (!alert.alerted) {
+      if (isAlert && !firedAlert.has(alert.id)) {
+        firedAlert.add(alert.id); beep('alert');
+        alert.acked = false; saveAlerts();
+      } else if (isWarning && !firedWarning.has(alert.id)) {
+        firedWarning.add(alert.id); beep('warning');
+      }
+    }
+
+    let state = 'nominal';
+    if (alert.alerted) state = 'alerted';
+    else if (isAlert)  state = 'alert';
+    else if (isWarning) state = 'warning';
+
+    const unacked     = !alert.acked && (isWarning || isAlert) && !alert.alerted;
+    const gjNeedsAttn = unacked && !alert.greenJet;
+    const paNeedsAttn = unacked && alert.paArmed && !alert.paChecked;
+
+    let puck = list.querySelector(`.puck[data-id="${alert.id}"]`);
+    if (!puck) {
+      puck = document.createElement('div');
+      puck.className = 'puck';
+      puck.dataset.id = alert.id;
+      puck.innerHTML = `
+        <div class="puck-top">
+          <span class="callsign"></span>
+          <span class="time-raw"></span>
+        </div>
+        <div class="countdown"></div>
+        <div class="puck-bottom">
+          <label class="check-pill" id="gj-${alert.id}">
+            <input type="checkbox" onchange="toggleGJ('${alert.id}', this.checked)">
+            Green Jet
+          </label>
+          <button class="pa-arm-btn" id="pa-arm-${alert.id}" onclick="togglePAArm('${alert.id}')">Pos Alert?</button>
+          <label class="check-pill" id="pa-${alert.id}" style="display:none">
+            <input type="checkbox" onchange="togglePA('${alert.id}', this.checked)">
+            <span class="pa-label"></span>
+          </label>
+          <div class="puck-actions">
+            <button class="ack-btn hidden" id="ack-${alert.id}" onclick="acknowledge('${alert.id}')">Ack</button>
+            <button class="alerted-btn" onclick="markAlerted('${alert.id}')">Alerted</button>
+            <button class="delete-btn" onclick="deleteAlert('${alert.id}')">✕</button>
+          </div>
+        </div>`;
+      const existing = list.querySelectorAll('.puck');
+      const idx = sorted.findIndex(a => a.id === alert.id);
+      if (idx < existing.length) list.insertBefore(puck, existing[idx]);
+      else list.appendChild(puck);
+    }
+
+    puck.className = `puck state-${state}${unacked ? ' unacked' : ''}`;
+    puck.querySelector('.callsign').textContent = alert.callsign;
+    puck.querySelector('.time-raw').textContent = alert.timeRaw;
+
+    const cdEl = puck.querySelector('.countdown');
+    if (alert.alerted) { cdEl.textContent = 'ALERTED'; cdEl.className = 'countdown past'; }
+    else if (ms > 0)   { const { text, cls } = formatCountdown(ms); cdEl.textContent = text; cdEl.className = `countdown ${cls}`; }
+    else               { cdEl.textContent = 'T+' + formatCountdown(-ms).text; cdEl.className = 'countdown fire'; }
+
+    const gjPill = puck.querySelector(`#gj-${alert.id}`);
+    gjPill.querySelector('input').checked = alert.greenJet;
+    gjPill.className = `check-pill ${alert.greenJet ? 'checked' : 'unchecked'}${gjNeedsAttn ? ' needs-attention' : ''}`;
+
+    puck.querySelector(`#pa-arm-${alert.id}`).style.display = alert.paArmed ? 'none' : '';
+
+    const paPill = puck.querySelector(`#pa-${alert.id}`);
+    paPill.style.display = alert.paArmed ? '' : 'none';
+    paPill.querySelector('input').checked = alert.paChecked;
+    paPill.querySelector('.pa-label').textContent = alert.paChecked ? 'Pos Alert Apvd' : 'Pos Alert?';
+    paPill.className = `check-pill ${alert.paChecked ? 'checked' : 'unchecked'}${paNeedsAttn ? ' needs-attention' : ''}`;
+
+    puck.querySelector(`#ack-${alert.id}`).className = `ack-btn${unacked ? '' : ' hidden'}`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function toggleGJ(id, val)   { const a = alerts.find(x=>x.id===id); if(a){a.greenJet=val; saveAlerts();} }
+function togglePA(id, val)   { const a = alerts.find(x=>x.id===id); if(a){a.paChecked=val; saveAlerts();} }
+function togglePAArm(id)     { const a = alerts.find(x=>x.id===id); if(a){a.paArmed=!a.paArmed; if(!a.paArmed)a.paChecked=false; saveAlerts();} }
+function acknowledge(id)     { const a = alerts.find(x=>x.id===id); if(a){a.acked=true; saveAlerts();} }
+function markAlerted(id)     { const a = alerts.find(x=>x.id===id); if(a){a.alerted=true; a.acked=true; saveAlerts();} }
+function deleteAlert(id) {
+  alerts = alerts.filter(x=>x.id!==id);
+  firedWarning.delete(id); firedAlert.delete(id);
+  saveAlerts();
+  document.querySelector(`.puck[data-id="${id}"]`)?.remove();
+  document.getElementById('empty-msg').style.display = alerts.length===0 ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════════
+function openModal() {
+  unlockAudio();
+  ['f-callsign','f-time'].forEach(id => { document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
+  document.getElementById('modal-error').textContent = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('f-callsign').focus(), 50);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function submitAlert() {
+  const callsign = document.getElementById('f-callsign').value.trim();
+  const timeStr  = document.getElementById('f-time').value.trim();
+  const errEl    = document.getElementById('modal-error');
+  let ok = true;
+  ['f-callsign','f-time'].forEach(id => document.getElementById(id).classList.remove('error'));
+  errEl.textContent = '';
+
+  if (!callsign) { document.getElementById('f-callsign').classList.add('error'); errEl.textContent = 'Callsign required.'; ok = false; }
+  const targetMs = parseJulianZulu(timeStr);
+  if (!targetMs) { document.getElementById('f-time').classList.add('error'); errEl.textContent = (ok?'':errEl.textContent+' ')+'Invalid time format.'; ok = false; }
+  if (!ok) return;
+
+  alerts.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    callsign: callsign.toUpperCase(),
+    timeRaw: toJulianZulu(targetMs),
+    targetMs,
+    greenJet: false, paArmed: false, paChecked: false, acked: true, alerted: false,
+  });
+  saveAlerts();
+  closeModal();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) submitAlert();
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+async function initApp() {
+  await loadFromBin();
+  updateClock();
+  render();
+  setInterval(updateClock, 1000);
+  setInterval(render, 1000);
+  setInterval(pollBin, POLL_MS);
+}
+</script>
+</body>
+</html>
